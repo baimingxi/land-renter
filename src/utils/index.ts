@@ -1,3 +1,4 @@
+import { APT_DECIMALS } from '@/config';
 import { message } from 'ant-design-vue';
 import BigNumber from 'bignumber.js';
 import dayjs from 'dayjs';
@@ -32,7 +33,13 @@ export const sleep = (ms: number) => {
   return new Promise((resolve) => setTimeout(resolve, ms));
 };
 
+export const PriceWithDecimal = (price: number | string | BigNumber, precision: number = 4) => {
+  return new BigNumber(price || 0).shiftedBy(-1 * APT_DECIMALS).dp(precision);
+};
+
 export const NumeralFormat = (num: number | string) => {
-  return numeral(num).format('0.[0]a');
+  return new BigNumber(num).isGreaterThan(1000)
+    ? numeral(num).format('0,0.0[0]a').toUpperCase()
+    : numeral(num).format('0,0.[0]a').toUpperCase();
 };
 

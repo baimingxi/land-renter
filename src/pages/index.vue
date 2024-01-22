@@ -1,77 +1,141 @@
 <template>
-  <div class="page-container">
+  <div class="page-container px-4">
     <h1 class="text-8 font-bold py-8">Land Renter 💰</h1>
 
-    <Form layout="vertical">
-      <FormItem label="Private Key">
-        <Input v-model:value="privateKeyString" type="password" />
-        <div class="flex-col gap-1 py-1">
-          <span class="text-sm font-bold text-text/50">
-            私钥: {{ ShortAddress(privateKeyString) }}
-          </span>
-          <span class="text-sm font-bold text-text/50">地址: {{ ShortAddress('0x12323223') }}</span>
-        </div>
-      </FormItem>
+    <div>
+      <Input type="file" placeholder="" accept=".json" @change="fileChange" />
+    </div>
 
-      <FormItem label="初始化子账户">
-        <div class="flex-col gap-2">
-          <div class="flex gap-2 max-w-100">
-            <InputNumber
-              v-model:value="initializeAmountOfSubAccount"
-              class="w-50"
-              :max="150"
-              :min="1"
-              :controls="false"
-              :precision="0"
-              placeholder="最小1个, 最大150个"
-            />
-          </div>
-          <div class="flex gap-2 items-center">
-            <span>当前子账户数: {{ currentSubAccountAmount }}</span>
-            <Button @click="checkSubAccountHandler" :loading="checking">查询子账户</Button>
+    <div class="my-5 max-h-100 overflow-y-auto">
+      <div class="flex-col gap-1">
+        <div
+          class="flex-col gap-2 rounded-2 overflow-hidden text-sm"
+          v-for="(account, index) in accountList"
+          :key="index"
+        >
+          <div
+            class="bg-primary/5 hover:bg-primary/10 p-4 py-2 flex flex-col lg:flex-row justify-between"
+          >
+            <a
+              class="underline break-all"
+              target="_blank"
+              :href="`https://explorer.aptoslabs.com/account/${account.address}?network=${network}`"
+            >
+              {{ index + 1 }}.
+              {{ account.address }}
+            </a>
+            <span>
+              <span>
+                Balance:
+                <span class="font-bold">
+                  {{ PriceWithDecimal(account.balance || 0) }}
+                </span>
+                APT
+              </span>
+              |
+              <span>
+                APTS:
+                <span class="font-bold">
+                  {{ NumberFormat(account.aptsBalance || 0) }}
+                </span>
+              </span>
+            </span>
           </div>
         </div>
-      </FormItem>
-    </Form>
+      </div>
+    </div>
+
+    <h1 class="text-5 font-bold">Current Epoch: {{ currentEpochId }} -> {{ toCurrenEpochEnd }}</h1>
   </div>
 </template>
 
 <script lang="ts" setup>
-  import { ShortAddress } from '@/utils';
-  import { Button, Form, FormItem, Input, InputNumber, message } from 'ant-design-vue';
+  import useContract from '@/hooks/useContract';
+  import useLand from '@/hooks/useLand';
+  import useLandGraphQL from '@/hooks/useLandGraphQL';
+  import { NumberFormat, PriceWithDecimal } from '@/utils/index';
+  import { message } from 'ant-design-vue';
+  import BigNumber from 'bignumber.js';
+  import dayjs from 'dayjs';
+  import numeral from 'numeral';
 
-  const privateKeyString = ref('');
-  const currentSubAccountAmount = ref(0);
-  const initializeAmountOfSubAccount = ref(0);
+  const { getBalance, getAPTSBalance } = useContract();
+  const { getLiveEpochId } = useLand();
+  const { getLandEpochInfo } = useLandGraphQL();
+  const timestamp = useTimestamp({ offset: 0 });
 
-  const subAccountsList = ref<any[]>([]);
-  const checking = ref(false);
-  const checkSubAccountHandler = async () => {
-    if (checking.value) return;
-    if (!privateKeyString.value) {
-      return message.error('请填入私钥');
-    }
+  const network = import.meta.env.VITE_APP_NETWORK;
+  const accountList = ref<any[]>([]);
 
-    try {
-      checking.value = true;
-      currentSubAccountAmount.value = 0;
-      const result: any = await checkSubAccount(privateKeyString.value);
-      currentSubAccountAmount.value = result[0];
-
-      subAccountsList.value = [];
-      if (currentSubAccountAmount.value > 0) {
-        const subAccountsResult: any = await getSubAccount(privateKeyString.value);
-        subAccountsList.value = subAccountsResult[0];
-        await nftsAmountOfAddress();
+  const fileChange = (e: any) => {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result;
+      try {
+        accountList.value = JSON.parse(text as string);
+      } catch (e: any) {
+        console.log(e);
+        message.error(e.message);
       }
-
-      message.success('查询子账户结果更新成功');
-    } catch (e: any) {
-      message.error(e.message);
-    } finally {
-      checking.value = false;
-    }
+    };
+    reader.readAsText(file);
   };
+
+  const basicInfoOfAccount = async () => {
+    if (accountList.value?.length === 0) {
+      return;
+    }
+
+    accountList.value.forEach(async (account: any, index: number) => {
+      try {
+        const balance = await getBalance(account.address);
+        accountList.value[index].balance = balance;
+      } catch {}
+
+      try {
+        const aptsBalance = await getAPTSBalance(account.address);
+        accountList.value[index].aptsBalance = aptsBalance;
+      } catch {}
+    });
+  };
+
+  const currentEpochId = ref<number>(0);
+  const currentEpochInfo = ref<any>({});
+  const epochDuration = 60 * 10;
+
+  const toCurrenEpochEnd = computed(() => {
+    const startTimeObj = currentEpochInfo.value?.startTime;
+    if (!startTimeObj) {
+      return numeral(0).format('00:00:00');
+    }
+
+    const startTime: any = Math.floor(dayjs(startTimeObj)?.valueOf() / 1e3);
+    const ts = Math.floor(timestamp.value / 1e3);
+    const endTime = new BigNumber(startTime).plus(epochDuration).toNumber();
+
+    return numeral(endTime - ts).format('00:00:00:00');
+  });
+
+  const init = async () => {
+    currentEpochId.value = await getLiveEpochId();
+    const result: any = await getLandEpochInfo(currentEpochId.value);
+    currentEpochInfo.value = result?.data?.getLandEpochInfo;
+  };
+
+  watch(
+    () => accountList.value,
+    () => {
+      basicInfoOfAccount();
+    },
+    { immediate: true },
+  );
+
+  onMounted(() => {
+    init();
+  });
+
+  // generatedAccounts();
 </script>
 
 <route lang="yaml">

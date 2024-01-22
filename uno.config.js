@@ -23,11 +23,11 @@ export default defineConfig({
   rules: [],
   theme: {
     colors: {
-      text: '#0d1019',
-      background: '#f3f5fa',
-      primary: '#4364c0',
-      secondary: '#90a6e2',
-      accent: '#587bdf',
+      text: '#1f0304',
+      background: '#fef4f4',
+      primary: '#e81c18',
+      secondary: '#f3cd88',
+      accent: '#eecb54',
     },
   },
 });
