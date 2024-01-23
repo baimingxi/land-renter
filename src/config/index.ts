@@ -6,3 +6,5 @@ export const AptosClient = new Aptos(
     network: import.meta.env.VITE_APP_NETWORK,
   }),
 );
+
+export const BID_FEE = 100;

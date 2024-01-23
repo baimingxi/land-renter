@@ -23,6 +23,10 @@ const getLandEpochInfoQuery = (epochId: number | string) => `query getLandEpochI
 	  }
   }`;
 
+const getMaxBidQuery = (epochId: number | string) => `query getMaxBid{
+  getMaxBid(epochId: ${epochId})
+}`;
+
 const getLandEpochStatQuery = (address: string, page: number) => `query getLandEpochStat {
 	getLandEpochStat(
 	  address: "${address ? AccountAddress.fromString(address).toStringLong() : ''}",
@@ -152,6 +156,14 @@ const useLandGraphQL = () => {
     });
   };
 
+  const getEpochMaxBid = async (epochId: number) => {
+    return await axios.post(import.meta.env.VITE_APP_MARKET_GRAPHQL_ENDPOINT, {
+      opertationName: 'getMaxBid',
+      query: getMaxBidQuery(epochId),
+      variables: {},
+    });
+  };
+
   return {
     getLandAptsPool,
     getLandBidStat,
@@ -162,6 +174,7 @@ const useLandGraphQL = () => {
 
     getMyLandBidStat,
     getMyLastBid,
+    getEpochMaxBid,
     getMySupportTicketCount,
     getAddressByInviteCode,
   };
