@@ -10,62 +10,125 @@
       ></font-awesome-icon>
     </h1>
 
-    <div class="flex justify-between">
-      <Input class="w-100" type="file" placeholder="" accept=".json" @change="fileChange" />
-      <Button @click="basicInfoOfAccount" v-if="accountList.length > 0">
-        Get Acount's Balances
-      </Button>
-    </div>
+    <span class="flex gap-2 w-100">
+      <Input v-model:value="landToolID" placeholder="land toold id" />
+      <Button @click="init">加载</Button>
+    </span>
 
-    <div class="my-5 max-h-100 overflow-y-auto">
-      <div class="flex-col gap-1">
-        <div
-          class="flex-col gap-2 rounded-2 overflow-hidden text-sm"
-          v-for="(account, index) in accountList"
-          :key="index"
-        >
-          <div
-            class="bg-primary/8 hover:bg-primary/10 p-4 py-2 flex flex-col lg:flex-row justify-between"
-          >
-            <a
-              class="underline break-all"
-              target="_blank"
-              :href="`https://explorer.aptoslabs.com/account/${account.address}?network=${network}`"
+    <div class="grid grid-cols-2 gap-1">
+      <div class="flex-col gap-2">
+        <div class="flex items-center justify-between mt-3">
+          <span>冲量地址</span>
+          <Button @click="basicInfoOfAccount('first')" v-if="firstBidAccountList.length > 0">
+            Get Acount's Balances
+          </Button>
+        </div>
+
+        <div class="max-h-100 overflow-y-auto">
+          <div class="flex-col gap-1">
+            <div
+              class="flex-col gap-2 rounded-2 overflow-hidden text-sm"
+              v-for="(account, index) in firstBidAccountList"
+              :key="index"
             >
-              {{ index + 1 }}.
-              {{ account.address }}
-            </a>
-            <span>
-              <span>
-                Balance:
-                <span class="font-bold">
-                  {{ PriceWithDecimal(account.balance || 0) }}
+              <div class="bg-primary/8 hover:bg-primary/10 p-4 py-2 flex flex-wrap gap-2">
+                <a
+                  class="underline break-all"
+                  target="_blank"
+                  :href="`https://explorer.aptoslabs.com/account/${account.address}?network=${network}`"
+                >
+                  {{ index + 1 }}.
+                  {{ account.address }}
+                </a>
+                <font-awesome-icon
+                  icon="fa-regular fa-copy"
+                  class="cursor-pointer"
+                  @click="copy(account.address)"
+                ></font-awesome-icon>
+                <span>
+                  <span>
+                    Balance:
+                    <span class="font-bold">
+                      {{ PriceWithDecimal(account.balance || 0) }}
+                    </span>
+                    APT
+                  </span>
+                  |
+                  <span>
+                    APTS:
+                    <span class="font-bold">
+                      {{ NumberFormat(account.aptsBalance || 0) }}
+                    </span>
+                  </span>
                 </span>
-                APT
-              </span>
-              |
-              <span>
-                APTS:
-                <span class="font-bold">
-                  {{ NumberFormat(account.aptsBalance || 0) }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex-col gap-2">
+        <div class="flex items-center justify-between mt-3">
+          <span>TOP N 地址</span>
+          <Button @click="basicInfoOfAccount('top')" v-if="topBidAccountList.length > 0">
+            Get Acount's Balances
+          </Button>
+        </div>
+
+        <div class="max-h-100 overflow-y-auto">
+          <div class="flex-col gap-1">
+            <div
+              class="flex-col gap-2 rounded-2 overflow-hidden text-sm"
+              v-for="(account, index) in topBidAccountList"
+              :key="index"
+            >
+              <div class="bg-primary/8 hover:bg-primary/10 p-4 py-2 flex flex-wrap gap-2">
+                <a
+                  class="underline break-all"
+                  target="_blank"
+                  :href="`https://explorer.aptoslabs.com/account/${account.address}?network=${network}`"
+                >
+                  {{ index + 1 }}.
+                  {{ account.address }}
+                </a>
+                <font-awesome-icon
+                  icon="fa-regular fa-copy"
+                  class="cursor-pointer"
+                  @click="copy(account.address)"
+                ></font-awesome-icon>
+                <span>
+                  <span>
+                    Balance:
+                    <span class="font-bold">
+                      {{ PriceWithDecimal(account.balance || 0) }}
+                    </span>
+                    APT
+                  </span>
+                  |
+                  <span>
+                    APTS:
+                    <span class="font-bold">
+                      {{ NumberFormat(account.aptsBalance || 0) }}
+                    </span>
+                  </span>
                 </span>
-              </span>
-            </span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <hr class="mb-5" />
+    <hr class="my-5" />
     <span class="flex gap-2 text-sm items-center">
-      <span class="w-fit">设置批量参与的触发时间: 600 ~ 1</span>
+      <span class="w-fit">设置冲量的触发时间: 600 ~ 1</span>
       <Input class="w-100" v-model:value="FIRST_BID_TIME" />
       <span>
         换算触发倒计时为:
         {{ countDownDisplay(FIRST_BID_TIME) }}
       </span>
       <Switch v-model:checked="OPEN_FIRST_BID"></Switch>
-      <span>开启批量参与</span>
+      <span>开启冲量</span>
     </span>
     <span class="flex gap-2 text-sm items-center mt-5">
       <span class="w-fit">设置冲排行榜的触发时间: 600 ~ 1</span>
@@ -95,7 +158,7 @@
   import useGraphQL from '@/hooks/useGraphQL';
   import useLand from '@/hooks/useLand';
   import useLandGraphQL from '@/hooks/useLandGraphQL';
-  import { NumberFormat, PriceWithDecimal, RandomNumberInRange } from '@/utils/index';
+  import { NumberFormat, PriceWithDecimal, RandomNumberInRange, copy } from '@/utils/index';
   import { Button, Input, Switch, Textarea, message } from 'ant-design-vue';
   import BigNumber from 'bignumber.js';
   import dayjs from 'dayjs';
@@ -105,12 +168,11 @@
 
   const { getBalance, getAPTSBalance } = useContract();
   const { getLiveEpochId, bidOnAPTS } = useLand();
-  const { getLandEpochInfo, getEpochMaxBid } = useLandGraphQL();
+  const { getLandEpochInfo, getEpochMaxBid, getToolWallet, getToolTopWallet } = useLandGraphQL();
   const { getValidNFTs } = useGraphQL();
   const timestamp = useTimestamp({ offset: 0 });
 
   const network = import.meta.env.VITE_APP_NETWORK;
-  const accountList = ref<any[]>([]);
   const logs = ref<string[]>([]);
   const silent = ref<boolean>(false);
 
@@ -121,35 +183,22 @@
     audio.play();
   };
 
-  const fileChange = (e: any) => {
-    const file = e.target.files[0];
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const text = e.target?.result;
-      try {
-        accountList.value = JSON.parse(text as string);
-      } catch (e: any) {
-        console.log(e);
-        message.error(e.message);
-      }
-    };
-    reader.readAsText(file);
-  };
-
-  const basicInfoOfAccount = async () => {
-    if (accountList.value?.length === 0) {
+  // TODO: update to firstBidAccountList or topBidAccountList
+  const basicInfoOfAccount = async (type: string) => {
+    const accountList = type === 'first' ? firstBidAccountList.value : topBidAccountList.value;
+    if (accountList?.length === 0) {
       return;
     }
 
-    accountList.value.forEach(async (account: any, index: number) => {
+    accountList.forEach(async (account: any, index: number) => {
       try {
         const balance = await getBalance(account.address);
-        accountList.value[index].balance = balance;
+        accountList[index].balance = balance;
       } catch {}
 
       try {
         const aptsBalance = await getAPTSBalance(account.address);
-        accountList.value[index].aptsBalance = aptsBalance;
+        accountList[index].aptsBalance = aptsBalance;
       } catch {}
     });
     message.success('更新 Balance 成功');
@@ -206,9 +255,21 @@
     }, 1e3);
   };
 
+  const landToolID = ref('');
+  const firstBidAccountList = ref<any[]>([]);
+  const topBidAccountList = ref<any[]>([]);
+
   const init = async () => {
     countdownContinue.value = true;
     currentEpochId.value = await getLiveEpochId();
+
+    const firstBidAccount: any = await getToolWallet(landToolID.value);
+    firstBidAccountList.value = firstBidAccount?.data?.getToolWallet || [];
+    basicInfoOfAccount('first');
+
+    const topBidAccount: any = await getToolTopWallet(currentEpochId.value, landToolID.value);
+    topBidAccountList.value = topBidAccount?.data?.getToolTopWallet || [];
+    basicInfoOfAccount('top');
 
     const result: any = await getLandEpochInfo(currentEpochId.value);
     currentEpochInfo.value = result?.data?.getLandEpochInfo;
@@ -224,12 +285,12 @@
   const autoBid = async () => {
     if (!OPEN_RANK_BID.value) return;
 
-    if (accountList.value.length === 0) {
+    if (topBidAccountList.value.length === 0) {
       addLogHanlder('账户列表为空, 未自动执行 Bid');
       return;
     }
 
-    accountList.value.forEach(async (account: any) => {
+    topBidAccountList.value.forEach(async (account: any) => {
       try {
         const amount: number = new BigNumber(currentEpochMaxBid.value)
           .plus(BID_FEE)
@@ -278,12 +339,12 @@
   const goFirstBid = async () => {
     if (!OPEN_FIRST_BID.value) return;
 
-    if (accountList.value.length === 0) {
+    if (firstBidAccountList.value.length === 0) {
       addLogHanlder('冲人数账户列表为空, 未自动执行 Bid');
       return;
     }
 
-    accountList.value.forEach(async (account: any) => {
+    firstBidAccountList.value.forEach(async (account: any) => {
       try {
         const amount: number = new BigNumber(100).plus(RandomNumberInRange(10, 20)).toNumber();
 
@@ -326,20 +387,6 @@
 
     playAudio();
   };
-
-  watch(
-    () => accountList.value,
-    () => {
-      basicInfoOfAccount();
-    },
-    { immediate: true },
-  );
-
-  onMounted(() => {
-    init();
-  });
-
-  // generatedAccounts();
 </script>
 
 <route lang="yaml">

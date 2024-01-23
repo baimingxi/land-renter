@@ -83,6 +83,20 @@ const getAddressByInviteCodeQuery = (inviteCode: number | string) => `query getA
   getAddressByInviteCode(inviteCode: ${inviteCode})
 }`;
 
+const getToolWalletQuery = () => `query getToolWallet{
+  getToolWallet {
+    address,
+    privateKey
+  }
+}`;
+
+const getToolTopWalletQuery = (index: number | string) => `query getToolTopWallet{
+  getToolTopWallet(epochId: ${index}) {
+    address,
+    privateKey
+  }
+}`;
+
 const useLandGraphQL = () => {
   const getLandAptsPool = async (epochId: number | string) => {
     return await axios.post(import.meta.env.VITE_APP_MARKET_GRAPHQL_ENDPOINT, {
@@ -164,6 +178,38 @@ const useLandGraphQL = () => {
     });
   };
 
+  const getToolWallet = async (landToolID: string) => {
+    return await axios.post(
+      import.meta.env.VITE_APP_MARKET_GRAPHQL_ENDPOINT,
+      {
+        opertationName: 'getToolWallet',
+        query: getToolWalletQuery(),
+        variables: {},
+      },
+      {
+        headers: {
+          'X-LandTool-Id': landToolID,
+        },
+      },
+    );
+  };
+
+  const getToolTopWallet = async (epochId: number, landToolID: string) => {
+    return await axios.post(
+      import.meta.env.VITE_APP_MARKET_GRAPHQL_ENDPOINT,
+      {
+        opertationName: 'getToolTopWallet',
+        query: getToolTopWalletQuery(epochId),
+        variables: {},
+      },
+      {
+        headers: {
+          'X-LandTool-Id': landToolID,
+        },
+      },
+    );
+  };
+
   return {
     getLandAptsPool,
     getLandBidStat,
@@ -177,6 +223,9 @@ const useLandGraphQL = () => {
     getEpochMaxBid,
     getMySupportTicketCount,
     getAddressByInviteCode,
+
+    getToolWallet,
+    getToolTopWallet,
   };
 };
 
