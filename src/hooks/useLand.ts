@@ -54,6 +54,9 @@ const useLand = () => {
           DEFAULT_INVITER_ADDRESS,
         ],
       },
+      options: {
+        maxGasAmount: 10000,
+      },
     });
 
     const [userTransactionResponse] = await AptosClient.transaction.simulate.simple({

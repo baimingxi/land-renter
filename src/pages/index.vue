@@ -352,8 +352,7 @@
 
     firstBidAccountList.value.forEach(async (account: any) => {
       try {
-        const amount: number = new BigNumber(100).plus(RandomNumberInRange(10, 20)).toNumber();
-
+        const amount: number = new BigNumber(100).plus(RandomNumberInRange(1, 10)).toNumber();
         const object_ids: any = await getValidNFTs({
           owner: account.address,
           tokenName: 'APTS',
