@@ -12,6 +12,8 @@ import {
   faShoppingBag,
   faSignOut,
   faSpinner,
+  faVolumeHigh,
+  faVolumeMute,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 /* add icons to the library */
@@ -33,6 +35,8 @@ import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
   faSignOut,
   faTwitter,
   faDiscord,
+  faVolumeHigh,
+  faVolumeMute,
 ].forEach((icon: any) => {
   library.add(icon);
 });
