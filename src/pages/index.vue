@@ -239,8 +239,11 @@
   const OPEN_RANK_BID = ref(false);
 
   const countdownContinue = ref(true);
+  let cid: any = null;
+
   const countdownTrigger = () => {
-    if (toCurrenEpochEnd.value == 0) {
+    console.log(toCurrenEpochEnd.value);
+    if (BigNumber(toCurrenEpochEnd.value).isLessThanOrEqualTo(0)) {
       init();
       return;
     } else if (toCurrenEpochEnd.value == RANK_BID_TIME.value) {
@@ -249,7 +252,10 @@
       goFirstBid();
     }
 
-    setTimeout(() => {
+    if (cid) {
+      clearTimeout(cid);
+    }
+    cid = setTimeout(() => {
       countdownTrigger();
       return;
     }, 1e3);
