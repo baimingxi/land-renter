@@ -225,6 +225,10 @@
     const ts = Math.floor(timestamp.value / 1e3);
     const endTime = new BigNumber(startTime).plus(epochDuration).toNumber();
 
+    if (endTime < ts) {
+      return '-';
+    }
+
     return endTime - ts;
   });
 
