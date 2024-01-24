@@ -183,7 +183,6 @@
     audio.play();
   };
 
-  // TODO: update to firstBidAccountList or topBidAccountList
   const basicInfoOfAccount = async (type: string) => {
     const accountList = type === 'first' ? firstBidAccountList.value : topBidAccountList.value;
     if (accountList?.length === 0) {
@@ -247,6 +246,14 @@
 
   const countdownTrigger = () => {
     console.log(toCurrenEpochEnd.value);
+
+    if (toCurrenEpochEnd.value == '-') {
+      setTimeout(() => {
+        init();
+      }, 10e3);
+      return;
+    }
+
     if (BigNumber(toCurrenEpochEnd.value).isLessThanOrEqualTo(0)) {
       init();
       return;
@@ -318,9 +325,9 @@
         }
 
         addLogHanlder(
-          `TOP N BID: ${account.address} try to bid by ${NumberFormat(
-            amount,
-          )} APTS, includes BID_FEES: ${BID_FEE}`,
+          `Epoch: ${currentEpochId.value} TOP N BID: ${
+            account.address
+          } try to bid by ${NumberFormat(amount)} APTS, includes BID_FEES: ${BID_FEE}`,
         );
 
         const result: any = await bidOnAPTS({
@@ -331,9 +338,9 @@
         });
 
         addLogHanlder(
-          `------------ \n TOP N BID: \n ${result.address} Bidded By ${NumberFormat(
-            amount,
-          )} APTS, includes BID_FEES: ${BID_FEE}. \n\t Txn: ${
+          `------------ \n Epoch: ${currentEpochId.value} TOP N BID: \n ${
+            result.address
+          } Bidded By ${NumberFormat(amount)} APTS, includes BID_FEES: ${BID_FEE}. \n\t Txn: ${
             result?.transactionHash
           } \n ------------ `,
         );
@@ -369,9 +376,9 @@
         }
 
         addLogHanlder(
-          `FIRST BID: ${account.address} try to bid by ${NumberFormat(
-            amount,
-          )} APTS, includes BID_FEES: ${BID_FEE}`,
+          `Epoch: ${currentEpochId.value} FIRST BID: ${
+            account.address
+          } try to bid by ${NumberFormat(amount)} APTS, includes BID_FEES: ${BID_FEE}`,
         );
 
         const result: any = await bidOnAPTS({
@@ -382,9 +389,9 @@
         });
 
         addLogHanlder(
-          `------------ \n FIRST BID: \n ${result.address} Bidded By ${NumberFormat(
-            amount,
-          )} APTS, includes BID_FEES: ${BID_FEE}. \n\t Txn: ${
+          `------------ \n Epoch: ${currentEpochId.value} FIRST BID: \n ${
+            result.address
+          } Bidded By ${NumberFormat(amount)} APTS, includes BID_FEES: ${BID_FEE}. \n\t Txn: ${
             result?.transactionHash
           } \n ------------ `,
         );

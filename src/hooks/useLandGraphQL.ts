@@ -40,6 +40,7 @@ const getLandEpochStatQuery = (address: string, page: number) => `query getLandE
 	  epochMeta {
       startTime,
       endTime,
+      status,
 	  },
 	  myLandReward {
       bidCount,
