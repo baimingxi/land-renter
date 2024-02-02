@@ -158,7 +158,7 @@
   import useGraphQL from '@/hooks/useGraphQL';
   import useLand from '@/hooks/useLand';
   import useLandGraphQL from '@/hooks/useLandGraphQL';
-  import { NumberFormat, PriceWithDecimal, RandomNumberInRange, copy } from '@/utils/index';
+  import { NumberFormat, PriceWithDecimal, RandomNumberInRange, copy, sleep } from '@/utils/index';
   import { Button, Input, Switch, Textarea, message } from 'ant-design-vue';
   import BigNumber from 'bignumber.js';
   import dayjs from 'dayjs';
@@ -167,7 +167,7 @@
   audio.volume = 0.5;
 
   const { getBalance, getAPTSBalance } = useContract();
-  const { getLiveEpochId, bidOnAPTS } = useLand();
+  const { getLiveEpochId, bidOnAPTS, getAPTSForPurchase } = useLand();
   const { getLandEpochInfo, getEpochMaxBid, getToolWallet, getToolTopWallet } = useLandGraphQL();
   const { getValidNFTs } = useGraphQL();
   const timestamp = useTimestamp({ offset: 0 });
@@ -272,7 +272,7 @@
     }, 1e3);
   };
 
-  const landToolID = ref('');
+  const landToolID = ref('17e5277d-dd62-4ad2-aea6-09e2e4a029be');
   const firstBidAccountList = ref<any[]>([]);
   const topBidAccountList = ref<any[]>([]);
 
@@ -299,6 +299,7 @@
 
   // const topNReplacementCount = ref(5);
 
+  const shock = 3000;
   const autoBid = async () => {
     if (!OPEN_RANK_BID.value) return;
 
@@ -313,6 +314,18 @@
           .plus(BID_FEE)
           .plus(RandomNumberInRange(10, 1000))
           .toNumber();
+
+        await getAPTSForPurchase({
+          account,
+          amount,
+        });
+
+        addLogHanlder(
+          `${account.address} get ${NumberFormat(amount)} APTS, includes BID_FEES: ${BID_FEE}`,
+        );
+
+        await sleep(shock);
+
         const object_ids: any = await getValidNFTs({
           owner: account.address,
           tokenName: 'APTS',
@@ -330,6 +343,7 @@
           } try to bid by ${NumberFormat(amount)} APTS, includes BID_FEES: ${BID_FEE}`,
         );
 
+        // through gas payment
         const result: any = await bidOnAPTS({
           account,
           epochId: Number(currentEpochId.value),
@@ -364,6 +378,18 @@
     firstBidAccountList.value.forEach(async (account: any) => {
       try {
         const amount: number = new BigNumber(100).plus(RandomNumberInRange(1, 10)).toNumber();
+
+        await getAPTSForPurchase({
+          account,
+          amount,
+        });
+
+        addLogHanlder(
+          `${account.address} get ${NumberFormat(amount)} APTS, includes BID_FEES: ${BID_FEE}`,
+        );
+
+        await sleep(shock);
+
         const object_ids: any = await getValidNFTs({
           owner: account.address,
           tokenName: 'APTS',
